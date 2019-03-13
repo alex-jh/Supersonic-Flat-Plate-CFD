@@ -84,7 +84,15 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -115,6 +123,41 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="input.txt" />
+    <Text Include="input_cavity.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Boundary.cpp" />
+    <ClCompile Include="CavityBoundaries.cpp" />
+    <ClCompile Include="CavityFlow.cpp" />
+    <ClCompile Include="Domain.cpp" />
+    <ClCompile Include="FlowUtils.cpp" />
+    <ClCompile Include="MachNeumannBoundary.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Solver.cpp" />
+    <ClCompile Include="State.cpp" />
+    <ClCompile Include="SupersonicNozzle.cpp" />
+    <ClCompile Include="SymmetryBoundary.cpp" />
+    <ClCompile Include="UnknownBoundary.cpp" />
+    <ClCompile Include="WallBoundary.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Boundary.h" />
+    <ClInclude Include="CavityBoundaries.h" />
+    <ClInclude Include="CavityFlow.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="Domain.h" />
+    <ClInclude Include="FlowUtils.h" />
+    <ClInclude Include="MachNeumannBoundary.h" />
+    <ClInclude Include="MathUtils.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Solver.h" />
+    <ClInclude Include="State.h" />
+    <ClInclude Include="SupersonicNozzle.h" />
+    <ClInclude Include="SymmetryBoundary.h" />
+    <ClInclude Include="UnknownBoundary.h" />
+    <ClInclude Include="WallBoundary.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
