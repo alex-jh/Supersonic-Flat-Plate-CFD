@@ -1,5 +1,6 @@
 #include "supersonic_flat_plate.h"
 #include "supersonic_cone.h"
+#include "supersonic_plate.h"
 
 void RunSupersonicFlatPlate() {
     using namespace supersonic_flat_plate;
@@ -13,8 +14,14 @@ void RunSupersonicCone() {
     supersonic_cone.Run();
 }
 
+void RunSupersonicPlate() {
+	using namespace supersonic_plate;
+	SupersonicPlate supersonic_plate;
+	supersonic_plate.Run();
+}
+
 int main() {
-    RunSupersonicCone();
+	RunSupersonicCone();
 
 	return 0;
 }

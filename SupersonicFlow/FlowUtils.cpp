@@ -34,7 +34,7 @@ namespace flow_utils {
 	}
 
 	double getEnergy(NodeState& state) {
-		return state[3];
+		return state[3] / state[0];
 	}
 
 	double getVx(NodeState& state) {
@@ -104,18 +104,23 @@ namespace flow_utils {
 
 		if (T < 0.0) return 0.0;
 
-		double a = sqrt(getLambda()*getR()*T);
+		double a = getLambda()*getR()*T;
 
-		return vel / a;
+		if (a > 0.0) {
+			return vel / sqrt(a);
+		}
+		else {
+			return 0.0;
+		}
 	}
 
 	double calcMu(NodeState& state) {
-		double T = calcTemperature(state);
+		double T = std::max(calcTemperature(state), 1.0e-8);
 
 		double mu0 = 1.458e-6 / FlowConstants::GetFlowConstants().u_c / 
 			FlowConstants::GetFlowConstants().P_c * sqrt(FlowConstants::GetFlowConstants().T_c);
 
-		return mu0 *pow(T, 1.5) / (T + 110.4);
+		return mu0 *T*sqrt(T) / (T + 110.4);
 	}
 
 	double calcEps(NodeState& state) {

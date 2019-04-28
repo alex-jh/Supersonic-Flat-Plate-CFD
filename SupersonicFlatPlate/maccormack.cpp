@@ -24,24 +24,24 @@ MacCormack::~MacCormack()
 
 void MacCormack::Update(double delta_t, double delta_x, double delta_y, int imax, int jmax, const FlowParameters& params,
     Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-    Array2D<double>& T, Array2D<double>& e) {
+    Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type) {
 
-    UpdatePredictor(delta_t, delta_x, delta_y, imax, jmax, params, u, v, rho, P, T, e);
+    UpdatePredictor(delta_t, delta_x, delta_y, imax, jmax, params, u, v, rho, P, T, e, type);
 
-    UpdateCorrector(delta_t, delta_x, delta_y, imax, jmax, params, u, v, rho, P, T, e);
+    UpdateCorrector(delta_t, delta_x, delta_y, imax, jmax, params, u, v, rho, P, T, e, type);
 }
 
 void MacCormack::UpdatePredictor(double delta_t, double delta_x, double delta_y, int imax, int jmax, const FlowParameters& params,
     Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-    Array2D<double>& T, Array2D<double>& e) {
+    Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type) {
 
     EncodeState(imax, jmax, params, u, v, rho, P, T, e);
 
-    CalcE(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, REARWARDS_DIFFERENCES, CENTRAL_DIFFERENCES);
-    CalcF(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, CENTRAL_DIFFERENCES, REARWARDS_DIFFERENCES);
+    CalcE(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, type, REARWARDS_DIFFERENCES, CENTRAL_DIFFERENCES);
+    CalcF(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, type, CENTRAL_DIFFERENCES, REARWARDS_DIFFERENCES);
 
     for (int i = 1; i < imax - 1; i++) {
-        for (int j = 1; j < jmax - 1; j++) {
+        for (int j = 1; j < jmax - 1; j++) if (type.Get(i, j) == INSIDE) {
             for (int k = 0; k < 4; k++) {
                 double x = E_[k].Get(i, j);
                 double y = E_[k].Get(i + 1, j);
@@ -63,7 +63,7 @@ void MacCormack::UpdatePredictor(double delta_t, double delta_x, double delta_y,
 
 void MacCormack::UpdateCorrector(double delta_t, double delta_x, double delta_y, int imax, int jmax, const FlowParameters& params,
     Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-    Array2D<double>& T, Array2D<double>& e) {
+    Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type) {
 
     for (int i = 1; i < imax - 1; i++) {
         for (int j = 1; j < jmax - 1; j++) {
@@ -75,11 +75,11 @@ void MacCormack::UpdateCorrector(double delta_t, double delta_x, double delta_y,
 
     EncodeState(imax, jmax, params, u, v, rho, P, T, e);
 
-    CalcE(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, FORWARD_DIFFERENCES, CENTRAL_DIFFERENCES);
-    CalcF(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, CENTRAL_DIFFERENCES, FORWARD_DIFFERENCES);
+    CalcE(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, type, FORWARD_DIFFERENCES, CENTRAL_DIFFERENCES);
+    CalcF(imax, jmax, delta_x, delta_y, params, u, v, rho, P, T, e, type, CENTRAL_DIFFERENCES, FORWARD_DIFFERENCES);
 
     for (int i = 1; i < imax - 1; i++) {
-        for (int j = 1; j < jmax - 1; j++) {
+        for (int j = 1; j < jmax - 1; j++) if (type.Get(i, j) == INSIDE) {
             for (int k = 0; k < 4; k++) {
                 double x = E_[k].Get(i, j);
                 double y = E_[k].Get(i - 1, j);
@@ -154,7 +154,7 @@ void MacCormack::DecodeState(int imax, int jmax, const FlowParameters& params,
 
 void MacCormack::CalcE(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
     Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-    Array2D<double>& T, Array2D<double>& e, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
+    Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
 
     double rho_ij;
     double u_ij;
@@ -164,8 +164,8 @@ void MacCormack::CalcE(int imax, int jmax, double deltax, double deltay, const F
     double tau_xy;
     double q_x;
 
-    CalcStress(imax, jmax, deltax, deltay, params, u, v, T, type_differences_x, type_differences_y);
-    CalcHeatFlux(imax, jmax, deltax, deltay, params, T, type_differences_x, type_differences_y);
+    CalcStress(imax, jmax, deltax, deltay, params, u, v, T, type, type_differences_x, type_differences_y);
+    CalcHeatFlux(imax, jmax, deltax, deltay, params, T, type, type_differences_x, type_differences_y);
 
     for (int i = 0; i < imax; i++) {
         for (int j = 0; j < jmax; j++) {
@@ -189,7 +189,7 @@ void MacCormack::CalcE(int imax, int jmax, double deltax, double deltay, const F
 
 void MacCormack::CalcF(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
     Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-    Array2D<double>& T, Array2D<double>& e, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
+    Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
 
     double rho_ij;
     double u_ij;
@@ -199,8 +199,8 @@ void MacCormack::CalcF(int imax, int jmax, double deltax, double deltay, const F
     double tau_xy;
     double q_y;
 
-    CalcStress(imax, jmax, deltax, deltay, params, u, v, T, type_differences_x, type_differences_y);
-    CalcHeatFlux(imax, jmax, deltax, deltay, params, T, type_differences_x, type_differences_y);
+    CalcStress(imax, jmax, deltax, deltay, params, u, v, T, type, type_differences_x, type_differences_y);
+    CalcHeatFlux(imax, jmax, deltax, deltay, params, T, type, type_differences_x, type_differences_y);
 
     for (int i = 0; i < imax; i++) {
         for (int j = 0; j < jmax; j++) {
@@ -223,7 +223,7 @@ void MacCormack::CalcF(int imax, int jmax, double deltax, double deltay, const F
 }
 
 void MacCormack::CalcStress(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
-    Array2D<double>& u, Array2D<double>& v, Array2D<double>& T,
+    Array2D<double>& u, Array2D<double>& v, Array2D<double>& T, Array2D<NODE_TYPE>& type,
     FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
 
     double u_ij;
@@ -243,11 +243,11 @@ void MacCormack::CalcStress(int imax, int jmax, double deltax, double deltay, co
             t_ij = T.Get(i, j);
             mu_ij = ViscositySutherlandLaw(params, T.Get(i, j));
 
-            if (i == 0) {
+			if (i == 0 || (type.Get(i, j) == BOUNDARY && type.Get(i - 1, j) == OUTSIDE)) {
                 ux_ij = (u.Get(i + 1, j) - u_ij) / deltax;
                 vx_ij = (v.Get(i + 1, j) - v_ij) / deltax;
             }
-            else if (i == imax - 1) {
+            else if (i == imax - 1 || (type.Get(i, j) == BOUNDARY && type.Get(i + 1, j) == OUTSIDE)) {
                 ux_ij = (u_ij - u.Get(i - 1, j)) / deltax;
                 vx_ij = (v_ij - v.Get(i - 1, j)) / deltax;
             }
@@ -268,11 +268,11 @@ void MacCormack::CalcStress(int imax, int jmax, double deltax, double deltay, co
                 }
             }
 
-            if (j == 0) {
+            if (j == 0 || (type.Get(i, j) == BOUNDARY && type.Get(i, j + 1) == OUTSIDE)) {
                 uy_ij = (u.Get(i, j + 1) - u_ij) / deltay;
                 vy_ij = (v.Get(i, j + 1) - v_ij) / deltay;
             }
-            else if (j == jmax - 1) {
+            else if (j == jmax - 1 || (type.Get(i, j) == BOUNDARY && type.Get(i, j + 1) == OUTSIDE)) {
                 uy_ij = (u_ij - u.Get(i, j - 1)) / deltay;
                 vy_ij = (v_ij - v.Get(i, j - 1)) / deltay;
             }
@@ -302,7 +302,7 @@ void MacCormack::CalcStress(int imax, int jmax, double deltax, double deltay, co
 }
 
 void MacCormack::CalcHeatFlux(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
-    Array2D<double>& T, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
+    Array2D<double>& T, Array2D<NODE_TYPE>& type, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y) {
 
     double t_ij;
     double tx_ij;
@@ -315,10 +315,10 @@ void MacCormack::CalcHeatFlux(int imax, int jmax, double deltax, double deltay, 
 
             t_ij = T.Get(i, j);
 
-            if (i == 0) {
+            if (i == 0 || (type.Get(i, j) == BOUNDARY && type.Get(i - 1, j) == OUTSIDE)) {
                 tx_ij = (T.Get(i + 1, j) - t_ij) / deltax;
             }
-            else if (i == imax - 1) {
+            else if (i == imax - 1 || (type.Get(i, j) == BOUNDARY && type.Get(i + 1, j) == OUTSIDE)) {
                 tx_ij = (t_ij - T.Get(i - 1, j)) / deltax;
             }
             else {
@@ -335,10 +335,10 @@ void MacCormack::CalcHeatFlux(int imax, int jmax, double deltax, double deltay, 
                 }
             }
 
-            if (j == 0) {
+            if (j == 0 || (type.Get(i, j) == BOUNDARY && type.Get(i, j - 1) == OUTSIDE)) {
                 ty_ij = (T.Get(i, j + 1) - t_ij) / deltay;
             }
-            else if (j == jmax - 1) {
+            else if (j == jmax - 1 || (type.Get(i, j) == BOUNDARY && type.Get(i, j + 1) == OUTSIDE)) {
                 ty_ij = (t_ij - T.Get(i, j - 1)) / deltay;
             }
             else {

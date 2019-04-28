@@ -47,7 +47,7 @@ namespace supersonic_cone {
         Array2D<double> rho_old_;
         Array2D<double> e_old_;
 
-        Array2D<int> outside_;
+        Array2D<NODE_TYPE> outside_;
     };
 }
 

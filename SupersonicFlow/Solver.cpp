@@ -3,11 +3,12 @@
 #include "FlowUtils.h"
 #include "Boundary.h"
 #include "MachNeumannBoundary.h"
+#undef NDEBUG
 #include <assert.h>
-#include <assert.h>
+#include <iostream>
 
 bool pressure_in_conv_energy = true;
-bool debug = false;
+bool debug = true;
 
 double Solver::getDeltaTx() {
 	return delta_t;
@@ -34,6 +35,15 @@ State Solver::solve(State& last_state) {
 
 		predictor_state = solvePredictorStep(state, 2, 0.5);
 		state = solveCorrectorStep(state, predictor_state, 2, 0.5);
+
+		for (int y = 1; y < last_state.getYSize() - 1; y++) {
+			for (int x = 1; x < last_state.getXSize() - 1; x++) {
+				if (state[y][x].size() > 0 && isnan(state[y][x][1])) {
+					int hh = 0;
+					hh++;
+				}
+			}
+		}
 	
 		return state;
 	}
@@ -169,6 +179,7 @@ void Solver::calcBoundaryNodes(State& last_state, State& state, double delta_tx)
 	for (int y = 0; y < last_state.getYSize(); y++) {
 		for (int x = 0; x < last_state.getXSize(); x++) {
 			if (last_state[y][x].boundary_ != NULL) {
+				state[y][x].done = false;
 				boundaryNodes.push_back(std::make_pair(
 					&last_state[y][x], std::make_pair(y, x)));
 			}
@@ -182,17 +193,18 @@ void Solver::calcBoundaryNodes(State& last_state, State& state, double delta_tx)
 		return a.first->boundaryType_ < b.first->boundaryType_;
 	});
 
-	for (BoundaryType boundaryType = BoundaryType::DIRICHLET_BOUNDARY;
+	for (BoundaryType boundaryType = BoundaryType::WALL_BOUNDARY;
 		boundaryType < BoundaryType::MACH_NEUMANN_BOUNDARY; 
 		boundaryType = (BoundaryType)((int)boundaryType + 1)) {
 		for (auto& nodes : boundaryNodes) {
 			for (auto* boundary : *nodes.first->boundary_) {
-				if (boundary->getType() == boundaryType) {
-					int y = nodes.second.first;
-					int x = nodes.second.second;
+				int y = nodes.second.first;
+				int x = nodes.second.second;
+				if (boundary->getType() == boundaryType && !state[y][x].done) {
 					state[y][x] =
 						boundary->calcState(x, y, last_state, *this, state, delta_tx);
 					state[y][x].boundary_ = last_state[y][x].boundary_;
+					state[y][x].done = true;
 				}
 			}
 		}
@@ -225,7 +237,7 @@ void Solver::calcBoundaryNodes(State& last_state, State& state, double delta_tx)
 	//}
 
 	if (debug) {
-		VerifyState(state);
+		//VerifyState(state);
 	}
 
 	MachNeumannBoundary::calcExternalBoundary(last_state);
@@ -261,8 +273,8 @@ NodeState Solver::solveInternalPredictorStep(int y, int x, double delta_t, State
 	NodeState state_y(4);
 	if (mask & 1) {
 		if (axilsymmetric) {
-			state_y = -delta_t / delta_y * (last_state.getY(y, x)*G2(y, x, last_state, EULER_FORWARD) - last_state.getY(y - 1, x)*G2(y - 1, x, last_state, EULER_FORWARD)) /
-				last_state.getY(y, x) - delta_t / delta_y * (J(y, x, last_state, EULER_FORWARD) - J(y - 1, x, last_state, EULER_FORWARD));
+			state_y = (-delta_t / delta_y * (last_state.getY(y, x)*G(y, x, last_state, EULER_FORWARD) - last_state.getY(y - 1, x)*G(y - 1, x, last_state, EULER_FORWARD))
+				+ delta_t * H(y, x, last_state, CENTRAL_DIFFERENCES)) / last_state.getY(y, x);
 		}
 		else {
 			state_y = -delta_t / delta_y * (G2(y, x, last_state, EULER_FORWARD) + J(y, x, last_state, EULER_FORWARD) 
@@ -273,8 +285,12 @@ NodeState Solver::solveInternalPredictorStep(int y, int x, double delta_t, State
 
 	predictor_state += state_x + state_y + state_h;
 
+	double P = flow_utils::calcPressure(predictor_state);
+	double P1 = flow_utils::calcPressure(last_state[y][x-1]);
+	double P2 = flow_utils::calcPressure(last_state[y][x]);
+
 	double T = flow_utils::calcTemperature(predictor_state);
-	double T1 = flow_utils::calcTemperature(last_state[y][x-1]);
+	double T1 = flow_utils::calcTemperature(last_state[y][x - 1]);
 	double T2 = flow_utils::calcTemperature(last_state[y][x]);
 
 	return predictor_state;
@@ -310,12 +326,12 @@ NodeState Solver::solveInternalCorrectorStep(int y, int x, double delta_t, State
 	NodeState state_y(4);
 	if (mask & 1) {
 		if (axilsymmetric) {
-			state_y = -delta_t / delta_y * (last_state.getY(y + 1, x)*G2(y + 1, x, predictor_state, EULER_BACKWARD) - last_state.getY(y, x)*G2(y, x, predictor_state, EULER_BACKWARD)) /
-				last_state.getY(y, x) - delta_t / delta_y * (J(y + 1, x, predictor_state, EULER_BACKWARD) - J(y, x, predictor_state, EULER_BACKWARD));
+			state_y = (-delta_t / delta_y * (last_state.getY(y + 1, x)*G(y + 1, x, predictor_state, EULER_BACKWARD) - last_state.getY(y, x)*G(y, x, predictor_state, EULER_BACKWARD))
+				+ delta_t*H(y + 1, x, predictor_state, CENTRAL_DIFFERENCES)) / last_state.getY(y, x);
 		}
 		else {
-			state_y = -delta_t / delta_y * (G2(y + 1, x, predictor_state, EULER_BACKWARD) + J(y + 1, x, predictor_state, EULER_BACKWARD)
-				- G2(y, x, predictor_state, EULER_BACKWARD) - J(y, x, predictor_state, EULER_BACKWARD));
+			state_y = (-delta_t / delta_y * (G(y + 1, x, predictor_state, EULER_BACKWARD)
+				- G(y, x, predictor_state, EULER_BACKWARD)));
 		}
 	}
 	NodeState state_h(4);
@@ -384,6 +400,15 @@ NodeState Solver::F(int y, int x, State& state, IntegrationType integrationType)
 
 	f[3] = u * state[y][x][3] + q_x - u * sigma_xx - v * tau_xr;
 
+	if (debug) {
+		for (int i = 0; i < 4; i++) {
+			if (isnan(f[i])) {
+				std::cout << q_x << " " << T_x << " " << P << " " << u_x << " " << u_r << std::endl;
+				assert(0);
+			}
+		}
+	}
+
 	return f;
 }
 
@@ -415,7 +440,7 @@ NodeState Solver::G(int y, int x, State& state, IntegrationType integrationType)
 		return state[y][x][2] / state[y][x][0];
 	});
 
-	double div_v = u_x + v_r + v / r;
+	double div_v = u_x + v_r + axilsymmetric * (v / r);
 
 	double P = flow_utils::calcPressure(state[y][x]);
 	double mu = flow_utils::calcMu(state[y][x]);
@@ -441,6 +466,15 @@ NodeState Solver::G(int y, int x, State& state, IntegrationType integrationType)
 	double q_r = -flow_utils::getCp(T)*(mu / Pr + eps / Pr_t)*T_r;
 
 	g[3] = v * state[y][x][3] + q_r - v * sigma_rr - u * tau_xr;
+
+	if (debug) {
+		for (int i = 0; i < 4; i++) {
+			if (isnan(g[i])) {
+				std::cout << q_r << " " << T_r << " " << P << " " << u_x << " " << u_r << std::endl;
+				assert(0);
+			}
+		}
+	}
 
 	return g;
 }
@@ -529,6 +563,12 @@ NodeState Solver::H(int y, int x, State& state, IntegrationType integrationType)
 	double sigma_h = -P + lambda * div_v + 2 * (mu + eps)*v / r;
 	h[2] = -sigma_h;
 
+	if (debug) {
+		for (int i = 0; i < 4; i++) {
+			assert(!isnan(h[i]));
+		}
+	}
+
 	return h;
 }
 
@@ -553,13 +593,13 @@ double Solver::getDerivativeX(State& state, int x, int y, IntegrationType integr
 	{
 	case EULER_BACKWARD:
 	{
-		assert(x - 1 >= 0 && state[y][x - 1].vals.size() != 0);
+		assert(x - 1 >= 0 && state[y][x - 1].size() != 0);
 		double delta_x = abs(state.getX(y, x) - state.getX(y, x - 1));
 		return (func(state, y, x) - func(state, y, x - 1)) / delta_x;
 	}
 	case EULER_FORWARD:
 	{
-		assert(x + 1 < state.getXSize() && state[y][x + 1].vals.size() != 0);
+		assert(x + 1 < state.getXSize() && state[y][x + 1].size() != 0);
 		double delta_x = abs(state.getX(y, x + 1) - state.getX(y, x));
 		return (func(state, y, x + 1) - func(state, y, x)) / delta_x;
 	}
@@ -578,13 +618,13 @@ double Solver::getDerivativeY(State& state, int x, int y, IntegrationType integr
 	{
 	case EULER_BACKWARD:
 	{
-		assert(y - 1 >= 0 && state[y - 1][x].vals.size() != 0);
+		assert(y - 1 >= 0 && state[y - 1][x].size() != 0);
 		double delta_y = abs(state.getY(y, x) - state.getY(y - 1, x));
 		return (func(state, y, x) - func(state, y - 1, x)) / delta_y;
 	}
 	case EULER_FORWARD:
 	{
-		assert(y + 1 < state.getYSize() && state[y + 1][x].vals.size() != 0);
+		assert(y + 1 < state.getYSize() && state[y + 1][x].size() != 0);
 		double delta_y = abs(state.getY(y + 1, x) - state.getY(y, x));
 		return (func(state, y + 1, x) - func(state, y, x)) / delta_y;
 	}

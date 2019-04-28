@@ -21,28 +21,30 @@ NodeState SymmetryBoundary::calcState(int x, int y, State& last_state, Solver& s
 	double mach = flow_utils::calcMach(last_state[y][x]);
 
 	int dy = 1;
-	if (y > last_state.getYSize() / 2) dy = -1;
+	if (last_state[y + dy][x].boundary_ != NULL) dy++;
+	if (y > last_state.getYSize() / 2) dy = -dy;
 
 	if (mach >= 1) {
-		double K = abs(last_state.getY(y + 2 * dy, x) - last_state.getY(y, x)) /
-			abs(last_state.getY(y + dy, x) - last_state.getY(y, x));
+		double K = abs(cur_state.getY(y + 2 * dy, x) - cur_state.getY(y, x)) /
+			abs(cur_state.getY(y + dy, x) - cur_state.getY(y, x));
 
-		state[0] = (K * K*last_state[y + dy][x][0] - last_state[y + 2 * dy][x][0]) /
+		state[0] = (K * K*cur_state[y + dy][x][0] - cur_state[y + 2 * dy][x][0]) /
 			(K*K - 1);
-		state[1] = (K * K*last_state[y + dy][x][1] / last_state[y + dy][x][0] - 
-			last_state[y + 2 * dy][x][1] / last_state[y + 2 * dy][x][1]) /
+		state[1] = (K * K*cur_state[y + dy][x][1] / cur_state[y + dy][x][0] -
+			cur_state[y + 2 * dy][x][1] / cur_state[y + 2 * dy][x][1]) /
 			(K*K - 1) * state[0];
 	}
 	else {
-		state[0] = last_state[y + dy][x][0];
-		state[1] = last_state[y + dy][x][1];
+		state[0] = cur_state[y + dy][x][0];
+		state[1] = cur_state[y + dy][x][1];
 	}
 
 	if (cur_state[y][x - 1].done) {
 
-		double T = flow_utils::calcTemperature(cur_state[y][x - 1]);
+		double T = flow_utils::calcTemperature(cur_state[y + dy][x]);
 
-		double enthalpy = T * flow_utils::getCp(cur_state[y][x - 1]) + pow(cur_state[y][x - 1][1] / cur_state[y][x - 1][0], 2) / 2;
+		double enthalpy = T * flow_utils::getCp(cur_state[y + dy][x]) + (
+			pow(cur_state[y + dy][x][1] / cur_state[y + dy][x][0], 2) + pow(cur_state[y + dy][x][2] / cur_state[y + dy][x][0], 2)) / 2;
 		T = (enthalpy - pow(state[1] / state[0], 2) / 2) / flow_utils::getCp(state);
 
 		state[3] = T * flow_utils::getCv(state) + pow(state[1] / state[0], 2) / 2;

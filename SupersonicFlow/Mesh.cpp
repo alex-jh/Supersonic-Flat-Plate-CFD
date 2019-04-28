@@ -210,26 +210,57 @@ std::vector<std::vector<Node*> > Mesh::findLeftBoundary(Domain& domain, int size
 	for (int i = 0; i < height_; i++) {
 		for (int j = 1; j < width_; j++) {
 			if (domain.getDomain(nodes_[i][j].domainY, nodes_[i][j].domainX) != 0
-				&& domain.getDomain(nodes_[i][j].domainY, nodes_[i][std::max(0, j - size)].domainX) == 0) {
+				&& (domain.getDomain(nodes_[i][j].domainY, nodes_[i][std::max(0, j - size)].domainX) == 0
+					|| (domain.getDomain(nodes_[std::min(height_ - 1, i + size)][j].domainY, nodes_[i][std::max(0, j - size)].domainX) == 0
+						&& domain.getDomain(nodes_[std::min(height_ - 1, i + size)][j].domainY, nodes_[i][j].domainX) != 0)
+					|| (domain.getDomain(nodes_[std::max(0, i - size)][j].domainY, nodes_[i][std::max(0, j - size)].domainX) == 0
+						&& domain.getDomain(nodes_[std::max(0, i - size)][j].domainY, nodes_[i][j].domainX) != 0))) {
 				boundary_points.push_back(&nodes_[i][j]);
 			}
 		}
 	}
 
-	std::sort(boundary_points.begin(), boundary_points.end(),
-		[](const Node* a, const Node* b) -> bool
-	{
-		return a->y < b->y;
-	});
-
 	std::vector<std::vector<Node*> > intervals_boundary;
+	std::vector<std::vector<Node*> > tmp;
+	tmp.push_back(boundary_points);
 
-	for (int i = 0; i < boundary_points.size(); i++) {
-		if (i == 0 || abs(boundary_points[i]->idxY -
-			intervals_boundary.back()[0]->idxY) > size) {
-			intervals_boundary.push_back(std::vector<Node*>());
+	for (int k = 0; k < 2; k++) {
+
+		intervals_boundary.clear();
+		for (auto& v : tmp) {
+
+			if (k == 0) {
+				std::sort(v.begin(), v.end(),
+					[](const Node* a, const Node* b) -> bool
+				{
+					return a->idxY < b->idxY;
+				});
+			}
+			else {
+				std::sort(v.begin(), v.end(),
+					[](const Node* a, const Node* b) -> bool
+				{
+					return a->idxX < b->idxX;
+				});
+			}
+
+			for (int i = 0; i < v.size(); i++) {
+				if (k == 0) {
+					if (i == 0 || abs(v[i]->idxY -
+						v[i-1]->idxY) > size) {
+						intervals_boundary.push_back(std::vector<Node*>());
+					}
+				}
+				else {
+					if (i == 0 || abs(v[i]->idxX -
+						v[i - 1]->idxX) > size) {
+						intervals_boundary.push_back(std::vector<Node*>());
+					}
+				}
+				intervals_boundary.back().push_back(v[i]);
+			}
 		}
-		intervals_boundary.back().push_back(boundary_points[i]);
+		tmp = intervals_boundary;
 	}
 
 	return intervals_boundary;

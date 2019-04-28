@@ -3,12 +3,12 @@
 #include "math_utils.h"
 #include "maccormack.h"
 
-namespace supersonic_flat_plate {
-	class SupersonicFlatPlate
+namespace supersonic_plate {
+	class SupersonicPlate
 	{
 	public:
-		SupersonicFlatPlate();
-		~SupersonicFlatPlate();
+		SupersonicPlate();
+		~SupersonicPlate();
 
 		void Run();
 		void InitializeFlowFliedVariables();
@@ -50,4 +50,3 @@ namespace supersonic_flat_plate {
 		Array2D<NODE_TYPE> outside_;
 	};
 }
-

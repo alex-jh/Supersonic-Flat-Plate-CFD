@@ -17,11 +17,15 @@
 namespace fs = std::experimental::filesystem;
 
 namespace supersonic_nozzle {
-	double u_c = 900;
-	double P_c = 150e3;
+	double u_j = 900;
+	double P_j = 15e3;
+	double r_j = 1.5;
+	double T_j = 650;
+	double u_c = u_j;
+	double P_c = P_j;
 	double r_c = 1.5;
+	double T_c = T_j;
 	double m = 5000;
-	double T_c = 650;
 
 	void setInitialConditions(State& state) {
 
@@ -29,7 +33,7 @@ namespace supersonic_nozzle {
 		flow_utils::FlowConstants::GetFlowConstants().P_c = P_c;
 		flow_utils::FlowConstants::GetFlowConstants().u_c = u_c;
 		flow_utils::FlowConstants::GetFlowConstants().r_c = r_c;
-		flow_utils::FlowConstants::GetFlowConstants().Cp = 0.0;
+		flow_utils::FlowConstants::GetFlowConstants().Cp = 1.005;
 
 		double T = 302 / T_c;
 		double P = 30e3 / P_c;
@@ -43,7 +47,7 @@ namespace supersonic_nozzle {
 		initialState.add(rho);
 		initialState.add(rho*u0);
 		initialState.add(rho*v0);
-		initialState.add(e0);
+		initialState.add(rho*e0);
 
 		for (int i = 0; i < state.getYSize(); i++) {
 			for (int j = 0; j < state.getXSize(); j++) {
@@ -58,13 +62,13 @@ namespace supersonic_nozzle {
 	NodeState getJetInitialCondition() {
 		NodeState state;
 
-		double u0 = 1;
+		double u0 = u_j / u_c;
 		double v0 = 0;
-		double P = 1;
+		double P = P_j / P_c;
 		double A = r_c * r_c*acos(-1.0);
 		double m = 5000;
 
-		double T = T_c;
+		double T = T_j / T_c;
 
 		double rho = flow_utils::calcDensity(P, T);
 		double e0 = flow_utils::calcEnergy(P, T, u0, v0);
@@ -72,7 +76,7 @@ namespace supersonic_nozzle {
 		state.add(rho);
 		state.add(rho*u0);
 		state.add(rho*v0);
-		state.add(e0);
+		state.add(rho*e0);
 
 		return state;
 	}
@@ -140,11 +144,11 @@ namespace supersonic_nozzle {
 		}
 
 		{
-			for (auto* it : left_boundaries[0]) {
-				state[it->idxX][it->idxY].setBoundary(dirichlet_boundary);
+			for (auto* it : left_boundaries[2]) {
+				state[it->idxX][it->idxY].setBoundary(wall_boundary);
 			}
 
-			for (auto* it : left_boundaries[2]) {
+			for (auto* it : left_boundaries[1]) {
 				state[it->idxX][it->idxY].setBoundary(dirichlet_boundary);
 			}
 		}
@@ -156,8 +160,10 @@ namespace supersonic_nozzle {
 		NodeState jet_initial_condition = getJetInitialCondition();
 
 		{
-			for (auto* it : left_boundaries[1]) {
+			for (auto* it : left_boundaries[0]) {
+				std::shared_ptr<std::vector<Boundary*> > tmp = state[it->idxX][it->idxY].boundary_;
 				state[it->idxX][it->idxY] = jet_initial_condition;
+				state[it->idxX][it->idxY].boundary_ = tmp;
 				state[it->idxX][it->idxY].setBoundary(dirichlet_boundary);
 			}
 		}
@@ -171,9 +177,9 @@ namespace supersonic_nozzle {
 	void SupersonicNozzle::Run() {
 		Solver& solver = Solver::GetSolver();
 		solver.axilsymmetric = true;
-		solver.delta_t = .00001;
+		solver.delta_t = .0001;
 
-		int iter_log = 10;
+		int iter_log = 1;
 		std::string path = "C:\\Users\\Alex\\Documents\\cavity_out\\";
 
 		fs::create_directories(path);

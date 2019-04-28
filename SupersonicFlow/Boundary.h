@@ -7,6 +7,7 @@ class Solver;
 // The order is important
 enum class BoundaryType {
 	EMPTY = 0,
+	WALL_BOUNDARY,
 	DIRICHLET_BOUNDARY,
 	UNKNOWN_BOUNDARY,
 	CAVITY_BOUNDARY,
@@ -14,7 +15,6 @@ enum class BoundaryType {
 	CAVITY_BOUNDARY_Y,
 	PRIORITY_1_BOUNDARY,
 	SYMMETRY_BOUNDARY,
-	WALL_BOUNDARY,
 	MACH_NEUMANN_BOUNDARY,
 	NUM_BOUNDARIES,
 };

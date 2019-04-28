@@ -13,68 +13,84 @@ public:
 		boundary_ = NULL;
 	}
 	NodeState(std::vector<double> v) {
-		vals = v;
+		size_ = (int)v.size();
+		for (int i = 0; i < size_; i++) {
+			vals[i] = v[i];
+		}
 		boundary_ = NULL;
 	}
 	NodeState(int s) {
-		vals.resize(s, 0.0);
+		size_ = s;
+		for (int i = 0; i < size_; i++) {
+			vals[i] = 0.0;
+		}
 		boundary_ = NULL;
 	}
 
-	void operator=(std::vector<double> v) {
-		vals = v;
+	void operator=(std::vector<double>& v) {
+		size_ = (int)v.size();
+		for (int i = 0; i < size_; i++) {
+			vals[i] = v[i];
+		}
 		boundary_ = NULL;
 	}
 
 	void operator=(NodeState state) {
-		vals = state.vals;
+		size_ = state.size();
+		for (int i = 0; i < size_; i++) {
+			vals[i] = state.vals[i];
+		}
 		boundary_ = state.boundary_;
-		done = state.done;
 	}
 
-	bool operator==(const NodeState& other) const {
-		return other.vals == vals;
+	bool operator==(NodeState& other) {
+		if (size_ != other.size()) return false;
+		for (int i = 0; i < size_; i++) {
+			if (other.vals[i] != vals[i]) return false;
+		} 
+		return true;
 	}
 
-	NodeState& operator*(double f) {
-		for (int i = 0; i < vals.size(); i++) {
-			vals[i] *= f;
+	NodeState operator*(double f) {
+		NodeState s = *this;
+		for (int i = 0; i < size(); i++) {
+			s.vals[i] *= f;
 		}
-		return *this;
+		return s;
 	}
 
-	NodeState operator+(NodeState state) {
-		NodeState st;
-		for (int i = 0; i < vals.size(); i++) {
-			st.add(vals[i] + state[i]);
+	NodeState operator+(const NodeState& state) {
+		NodeState s = *this;
+		for (int i = 0; i < size(); i++) {
+			s.vals[i] += state.vals[i];
 		}
-		return st;
+		return s;
 	}
 
-	NodeState operator-(NodeState state) const {
-		NodeState st;
-		for (int i = 0; i < vals.size(); i++) {
-			st.add(vals[i] - state[i]);
+	NodeState operator-(const NodeState& state) {
+		NodeState s = *this;
+		for (int i = 0; i < size(); i++) {
+			s.vals[i] -= state.vals[i];
 		}
-		return st;
+		return s;
 	}
 
-	NodeState operator/(double f) const {
-		NodeState st;
-		for (int i = 0; i < vals.size(); i++) {
-			st.add(vals[i] / f);
+	NodeState operator/(double f) {
+		NodeState s = *this;
+		for (int i = 0; i < size(); i++) {
+			s.vals[i] /= f;
 		}
-		return st;
+		return s;
 	}
 
 	void operator+=(NodeState state) {
-		for (int i = 0; i < vals.size(); i++) {
+		for (int i = 0; i < size(); i++) {
 			vals[i] += state[i];
 		}
 	}
 
 	void operator-=(NodeState state) {
-		for (int i = 0; i < vals.size(); i++) {
+		for (int i = 0; i < size(); i++) {
 			vals[i] -= state[i];
 		}
 	}
@@ -83,9 +99,9 @@ public:
 		return vals[i];
 	}
 
-	int size() { return (int)vals.size(); }
+	int size() const { return size_; }
 
-	void add(double val) { vals.push_back(val); }
+	void add(double val) { vals[size_++] = val; }
 
 	void setBoundary(Boundary* boundary) {
 		if (boundary_ == NULL) {
@@ -95,8 +111,9 @@ public:
 		boundaryType_ = (BoundaryType)std::max((int)boundaryType_, (int)boundary->getType());
 	}
 
-	std::vector<double> vals;
+	double vals[4];
 	bool done = false;
+	int size_ = 0;
 
 	std::shared_ptr<std::vector<Boundary*> > boundary_;
 	BoundaryType boundaryType_ = BoundaryType::EMPTY;

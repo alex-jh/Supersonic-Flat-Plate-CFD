@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{6F4E2F80-F220-4251-9AAE-62BE25107CD3}</ProjectGuid>
     <RootNamespace>SupersonicFlatPlate</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -122,6 +122,7 @@
     <ClCompile Include="step_size_calculator.cpp" />
     <ClCompile Include="supersonic_cone.cpp" />
     <ClCompile Include="supersonic_flat_plate.cpp" />
+    <ClCompile Include="supersonic_plate.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="file_writer.h" />
@@ -132,6 +133,7 @@
     <ClInclude Include="step_size_calculator.h" />
     <ClInclude Include="supersonic_cone.h" />
     <ClInclude Include="supersonic_flat_plate.h" />
+    <ClInclude Include="supersonic_plate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

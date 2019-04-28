@@ -8,11 +8,11 @@
 namespace supersonic_cone {
 
     const int IMAX = 120;
-    const int JMAX = 70;
+    const int JMAX = 80;
     const double pi = acos(-1.0);
     const double angle = 0;
-    const int margin = 0;
-    const int height = 0;
+    const int margin = 50;
+    const int height = 20;
 
     SupersonicCone::SupersonicCone() : imax_(IMAX), jmax_(JMAX), maccormack_solver_(IMAX, JMAX)
     {
@@ -22,7 +22,7 @@ namespace supersonic_cone {
         double M_inf = 3;
         double a_inf = 340.28;
         double u_inf = a_inf * M_inf;
-        double plate_length = 0.00001;
+        double plate_length = 0.0001;
         double R = 287;
         double P_inf = 101325;
         double T_inf = 288.16;
@@ -53,7 +53,7 @@ namespace supersonic_cone {
         rho_ = Array2D<double>(imax_, jmax_);
         M_ = Array2D<double>(imax_, jmax_);
         e_ = Array2D<double>(imax_, jmax_);
-        outside_ = Array2D<int>(imax_, jmax_);
+        outside_ = Array2D<NODE_TYPE>(imax_, jmax_);
 
         deltax_ = CalcXStep(flow_parameters_, imax_);
         deltay_ = CalcYStep(flow_parameters_, jmax_);
@@ -97,11 +97,11 @@ namespace supersonic_cone {
             v_old_ = v_;
             P_old_ = P_;
 
-            maccormack_solver_.UpdatePredictor(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
+            maccormack_solver_.UpdatePredictor(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
 
             BoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
-            maccormack_solver_.UpdateCorrector(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
+            maccormack_solver_.UpdateCorrector(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
 
             BoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
@@ -133,7 +133,17 @@ namespace supersonic_cone {
                 M_.Get(i, j) = flow_parameters_.M_inf;
                 e_.Get(i, j) = flow_parameters_.cv * flow_parameters_.T_inf;
 
-                outside_.Set(i, j, !(i > margin && j < height));
+				if (i > margin && j < height) {
+					outside_.Set(i, j, OUTSIDE);
+				}
+				else {
+					if (i == 0 || i == imax_ - 1 || j == 0 || j == jmax_ - 1) {
+						outside_.Set(i, j, BOUNDARY);
+					}
+					else {
+						outside_.Set(i, j, INSIDE);
+					}
+				}
             }
         }
 
@@ -159,8 +169,9 @@ namespace supersonic_cone {
             u_.Get(i, height) = 0;
             v_.Get(i, height) = 0;
             M_.Get(i, height) = 0;
-            rho_.Get(i, height) = flow_parameters_.P_inf / T_.Get(i, 0) / flow_parameters_.R;
+            rho_.Get(i, height) = flow_parameters_.P_inf / T_.Get(i, height) / flow_parameters_.R;
             e_.Get(i, height) = flow_parameters_.cv * flow_parameters_.T_wall;
+			outside_.Set(i, height, BOUNDARY);
         }
 
         for (int j = 0; j <= height; j++) {
@@ -170,6 +181,7 @@ namespace supersonic_cone {
             M_.Get(margin, j) = 0;
             rho_.Get(margin, j) = flow_parameters_.P_inf / flow_parameters_.T_wall / flow_parameters_.R;
             e_.Get(margin, j) = flow_parameters_.cv * flow_parameters_.T_wall;
+			outside_.Set(margin, height, BOUNDARY);
         }
 
     }
@@ -177,20 +189,6 @@ namespace supersonic_cone {
     void SupersonicCone::BoundaryConditions(int imax, int jmax, const FlowParameters& params,
         Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
         Array2D<double>& T, Array2D<double>& e) {
-
-        for (int i = margin + 1; i < imax_; i++) {
-            for (int j = 0; j < height; j++) {
-                T_.Get(i, j) = flow_parameters_.T_inf;
-                P_.Get(i, j) = flow_parameters_.P_inf;
-                rho_.Get(i, j) = flow_parameters_.P_inf / flow_parameters_.T_inf / flow_parameters_.R;
-                u_.Get(i, j) = flow_parameters_.M_inf * flow_parameters_.a_inf;
-                v_.Get(i, j) = 0;
-                M_.Get(i, j) = flow_parameters_.M_inf;
-                e_.Get(i, j) = flow_parameters_.cv * flow_parameters_.T_inf;
-
-                outside_.Set(i, j, !(i > margin && j < height));
-            }
-        }
 
         for (int j = 0; j < jmax; j++) {
             u.Set(0, j, params.a_inf*params.M_inf);
@@ -229,7 +227,7 @@ namespace supersonic_cone {
         
 
         for (int j = 0; j <= height; j++) {
-            p_ij = 2 * P.Get(margin + 1, j) - P.Get(margin + 1, j);
+            p_ij = 2 * P.Get(margin - 1, j) - P.Get(margin - 2, j);
             T_.Get(margin, j) = flow_parameters_.T_wall;
             u_.Get(margin, j) = 0;
             v_.Get(margin, j) = 0;
@@ -237,6 +235,17 @@ namespace supersonic_cone {
             rho_.Get(margin, j) = flow_parameters_.P_inf / flow_parameters_.T_wall / flow_parameters_.R;
             e_.Get(margin, j) = flow_parameters_.cv * flow_parameters_.T_wall;
         }
+
+		for (int i = margin+1; i < imax_; i++) {
+			p_ij = 2 * P.Get(i, height + 1) - P.Get(i, height + 2);
+			T_.Get(i, height) = flow_parameters_.T_wall;
+			u_.Get(i, height) = 0;
+			v_.Get(i, height) = 0;
+			P.Set(i, height, p_ij);
+			rho_.Get(i, height) = flow_parameters_.P_inf / flow_parameters_.T_wall / flow_parameters_.R;
+			e_.Get(i, height) = flow_parameters_.cv * flow_parameters_.T_wall;
+		}
+
         /*
         for (int i = margin + 1; i < imax_; i++) {
             bool vis = false;
@@ -262,22 +271,6 @@ namespace supersonic_cone {
             T.Set(imax - 1, j, 2 * T.Get(imax - 2, j) - T.Get(imax - 3, j));
             rho.Set(imax - 1, j, 2 * rho.Get(imax - 2, j) - rho.Get(imax - 3, j));
             e.Set(imax - 1, j, 2 * e.Get(imax - 2, j) - e.Get(imax - 3, j));;
-        }
-
-
-
-
-
-
-
-        for (int i = margin; i < imax_; i++) {
-            p_ij = 2 * P.Get(i, height + 1) - P.Get(i, height + 2);
-            T_.Get(i, height) = flow_parameters_.T_wall;
-            u_.Get(i, height) = 0;
-            v_.Get(i, height) = 0;
-            P.Set(i, height, p_ij);
-            rho_.Get(i, height) = flow_parameters_.P_inf / flow_parameters_.T_wall / flow_parameters_.R;
-            e_.Get(i, height) = flow_parameters_.cv * flow_parameters_.T_wall;
         }
 
     }

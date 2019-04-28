@@ -36,6 +36,9 @@
     <ClCompile Include="supersonic_cone.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="supersonic_plate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="supersonic_flat_plate.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="supersonic_cone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="supersonic_plate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,7 +14,7 @@ namespace flow_utils {
 			Cp = 1.005;
 		}
 
-		static FlowConstants& GetFlowConstants() {
+		inline static FlowConstants& GetFlowConstants() {
 			static FlowConstants object;
 			return object;
 		}
