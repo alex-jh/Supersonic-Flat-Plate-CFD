@@ -18,7 +18,7 @@ typedef enum NodeType {
 class MacCormack
 {
 public:
-	MacCormack(int imax, int jmax);
+	MacCormack(int imax, int jmax, bool axilsymmetric=false);
 	~MacCormack();
 
 	void Update(double delta_t, double delta_x, double delta_y, int imax, int jmax, const FlowParameters& params,
@@ -49,7 +49,15 @@ public:
 		Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
 		Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y);
 
+	void CalcH(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
+		Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
+		Array2D<double>& T, Array2D<double>& e, Array2D<NODE_TYPE>& type, FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y);
+
 	void CalcStress(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
+		Array2D<double>& u, Array2D<double>& v, Array2D<double>& T, Array2D<NODE_TYPE>& type,
+		FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y);
+
+	void CalcAxilsymmetricStress(int imax, int jmax, double deltax, double deltay, const FlowParameters& params,
 		Array2D<double>& u, Array2D<double>& v, Array2D<double>& T, Array2D<NODE_TYPE>& type,
 		FiniteDifferencesType type_differences_x, FiniteDifferencesType type_differences_y);
 
@@ -62,10 +70,14 @@ private:
 
 	Array2D<double> E_[4];
 	Array2D<double> F_[4];
+	Array2D<double> H_[4];
 	Array2D<double> tauxx_;
 	Array2D<double> tauyy_;
 	Array2D<double> tauxy_;
+	Array2D<double> tauh_;
 	Array2D<double> qx_;
 	Array2D<double> qy_;
+
+	bool axilsymmetric_;
 };
 

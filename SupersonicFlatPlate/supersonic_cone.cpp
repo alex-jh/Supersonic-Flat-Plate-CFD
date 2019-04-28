@@ -14,7 +14,7 @@ namespace supersonic_cone {
     const int margin = 50;
     const int height = 20;
 
-    SupersonicCone::SupersonicCone() : imax_(IMAX), jmax_(JMAX), maccormack_solver_(IMAX, JMAX)
+    SupersonicCone::SupersonicCone() : imax_(IMAX), jmax_(JMAX), maccormack_solver_(IMAX, JMAX, true)
     {
         flow_parameters_.mu = 1.7894e-5;
         flow_parameters_.T_0 = 288.16;
