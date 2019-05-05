@@ -3,19 +3,19 @@
 #include "math_utils.h"
 #include "maccormack.h"
 
-namespace supersonic_flat_plate {
-	class SupersonicFlatPlate
+namespace supersonic_flow {
+	class SupersonicFlow
 	{
 	public:
-		SupersonicFlatPlate();
-		~SupersonicFlatPlate();
+		SupersonicFlow(int imax, int jmax);
+		~SupersonicFlow();
 
 		void Run();
-		void InitializeFlowFieldVariables();
+		virtual void InitializeFlowFieldVariables() = 0;
 
-		void BoundaryConditions(int imax, int jmax, const FlowParameters& params,
+		virtual void BoundaryConditions(int imax, int jmax, const FlowParameters& params,
 			Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
-			Array2D<double>& T, Array2D<double>& e);
+			Array2D<double>& T, Array2D<double>& e) = 0;
 
 		bool CheckConvergence(double& diff);
 
@@ -23,7 +23,7 @@ namespace supersonic_flat_plate {
 		double CalcXStep(const FlowParameters& params, int size);
 		double CalcYStep(const FlowParameters& params, int size);
 
-	private:
+	protected:
 		FlowParameters flow_parameters_;
 		MacCormack maccormack_solver_;
 		int imax_;
@@ -50,4 +50,3 @@ namespace supersonic_flat_plate {
 		Array2D<NODE_TYPE> outside_;
 	};
 }
-

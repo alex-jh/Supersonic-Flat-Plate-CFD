@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-file = open("Pressure.txt")
+file = open("VelocityX.txt")
 
 x, y = file.readline().split(" ")
 x = int(x)

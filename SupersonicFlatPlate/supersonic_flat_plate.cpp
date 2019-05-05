@@ -76,7 +76,7 @@ namespace supersonic_flat_plate {
     void SupersonicFlatPlate::Run() {
 
         // Sets initial conditions.
-        InitializeFlowFliedVariables();
+        InitializeFlowFieldVariables();
 
         int mod = 1;
 
@@ -113,7 +113,7 @@ namespace supersonic_flat_plate {
         WriteInFile(v_, deltax_, deltay_, "VelocityY");
     }
 
-    void SupersonicFlatPlate::InitializeFlowFliedVariables() {
+    void SupersonicFlatPlate::InitializeFlowFieldVariables() {
 
         for (int i = 0; i < imax_; i++) {
             for (int j = 0; j < jmax_; j++) {
