@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include "file_writer.h"
+#include <chrono>
 
 namespace supersonic_flow {
 
@@ -76,11 +77,15 @@ namespace supersonic_flow {
 
 	void SupersonicFlow::Run() {
 
+		auto start_time = std::chrono::high_resolution_clock::now();
+
 		// Sets initial conditions.
 		InitializeFlowFieldVariables();
 		BoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
-		int mod = 1;
+		int mod = 10;
+
+		maxit = 1000;
 
 		for (int it = 0; it < maxit; it++) {
 
@@ -88,17 +93,20 @@ namespace supersonic_flow {
 				std::cout << "Iteration " << it << " ";
 
 			double delta_t = CalcTStep(imax_, jmax_, deltax_, deltay_, flow_parameters_, u_, v_, rho_, P_, T_, 0.6);
+			double delta_t2 = CalcTStep2(imax_, jmax_, deltax_, deltay_, flow_parameters_, u_, v_, rho_, P_, T_, 0.6);
+
+			//std::cout << delta_t << " " << delta_t2 << std::endl;
 
 			rho_old_ = rho_;
 			u_old_ = u_;
 			v_old_ = v_;
 			P_old_ = P_;
 
-			maccormack_solver_.UpdatePredictor(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
+			maccormack_solver_.UpdatePredictor(delta_t2, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
 
 			BoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
-			maccormack_solver_.UpdateCorrector(delta_t, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
+			maccormack_solver_.UpdateCorrector(delta_t2, deltax_, deltay_, imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_, outside_);
 
 			BoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
@@ -107,9 +115,23 @@ namespace supersonic_flow {
 				break;
 			}
 
-			if (it % mod == 0)
+			if (it % mod == 0) {
 				std::cout << diff << std::endl;
+
+				auto end_time = std::chrono::high_resolution_clock::now();
+				auto time = end_time - start_time;
+
+				std::cout << "Iterations: " << it << std::endl;
+				std::cout << "Time: " << time / std::chrono::milliseconds(1) << "ms to run.\n";
+
+			}
 		}
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto time = end_time - start_time;
+
+		std::cout << "Iterations: " << maxit << std::endl;
+		std::cout << "Time: " << time / std::chrono::milliseconds(1) << "ms to run.\n";
 
 		WriteInFile(P_, deltax_, deltay_, "Pressure");
 		WriteInFile(rho_, deltax_, deltay_, "Density");

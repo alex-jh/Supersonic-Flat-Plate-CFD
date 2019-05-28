@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-file = open("VelocityX.txt")
+file = open("../SupersonicFlowGpu/Output2/VelocityY.txt")
+#file = open("Pressure.txt")
 
 x, y = file.readline().split(" ")
 x = int(x)
 y = int(y)
+
+print (x, y)
 
 X = np.zeros((x, y))
 Y = np.zeros((x, y))
@@ -20,6 +23,7 @@ for i in range(x):
 
 fig1, ax2 = plt.subplots(constrained_layout=True)
 CS = ax2.contourf(X, Y, Z, 20, origin='lower')
+#CS = ax2.contour(X, Y, Z, 20, origin='lower', linewidths=1)
 
 ax2.set_xlabel('x / L')
 ax2.set_ylabel('y / L')

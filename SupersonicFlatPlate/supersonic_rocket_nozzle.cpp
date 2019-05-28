@@ -17,7 +17,7 @@ namespace supersonic_rocket_nozzle {
 	const int nozzle_exit_height = JMAX / 4;
 	const int nozzle_wall_height = nozzle_exit_height / 4;
 	const int freestream_inlet = JMAX - nozzle_exit_height - nozzle_wall_height;
-	const int nozzle_wall_width = IMAX / 40;
+	const int nozzle_wall_width = IMAX / 40 + 20;
 	const int nozzle_exit_width = nozzle_wall_width - 5;
 
 	SupersonicRocketNozzle::SupersonicRocketNozzle() : SupersonicFlow(IMAX, JMAX)
@@ -71,11 +71,11 @@ namespace supersonic_rocket_nozzle {
 
 				outside_.Set(i, j, INSIDE);
 
-				if (i < nozzle_exit_width && j < nozzle_exit_height) {
+				if (i < nozzle_exit_width && j <= nozzle_exit_height) {
 					outside_.Set(i, j, OUTSIDE);
 				}
 
-				if (j < nozzle_exit_height + nozzle_wall_height && j >= nozzle_exit_height &&
+				if (j < nozzle_exit_height + nozzle_wall_height && j > nozzle_exit_height &&
 					i < nozzle_wall_width) {
 					outside_.Set(i, j, OUTSIDE);
 				}
@@ -92,9 +92,9 @@ namespace supersonic_rocket_nozzle {
 
 		NozzleWallBoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
-		SymmetryBoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
-
 		NozzleExitBoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
+
+		SymmetryBoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
 		TopBoundaryConditions(imax_, jmax_, flow_parameters_, u_, v_, rho_, P_, T_, e_);
 
@@ -122,7 +122,7 @@ namespace supersonic_rocket_nozzle {
 		Array2D<double>& u, Array2D<double>& v, Array2D<double>& rho, Array2D<double>& P,
 		Array2D<double>& T, Array2D<double>& e) {
 
-		for (int j = 0; j <= nozzle_exit_height; j++) {
+		for (int j = 0; j < nozzle_exit_height; j++) {
 			u.Set(nozzle_exit_width, j, params.a_inf * params.M_inf);
 			v.Set(nozzle_exit_width, j, 0);
 			P.Set(nozzle_exit_width, j, P_exit_);
@@ -184,17 +184,26 @@ namespace supersonic_rocket_nozzle {
 		double p_ij;
 		double rho_ij;
 		double u_ij;
-		for (int i = 0; i < IMAX; i++) {
-			rho_ij = 2 * rho.Get(i, 1) - rho.Get(i, 2);
-			u_ij = 2 * u.Get(i, 1) - u.Get(i, 2);
+		double T_ij;
+		double K;
+		for (int i = nozzle_exit_width + 1; i < IMAX; i++) {
+			K = 2; // r(3) / r(2) = 2*delta_y / delta_y
+			rho_ij = (K * K * rho.Get(i, 1) - rho.Get(i, 2)) / (K * K - 1);
+			u_ij = (K * K * u.Get(i, 1) - u.Get(i, 2)) / (K * K - 1);
 			p_ij = 2 * P.Get(i, 1) - P.Get(i, 2);
+
+			// c_p*T + u*u/2 is constant
+			//T_ij = (flow_parameters_.cp*T.Get(i - 1, 0) + u.Get(i - 1, 0)* u.Get(i - 1, 0) / 2 - 
+			//	u.Get(i, 0)* u.Get(i, 0) / 2) / flow_parameters_.cp;
+			//p_ij = T_ij * params.R * rho_ij;
+			T_ij = p_ij / params.R / rho_ij;
 
 			u.Set(i, 0, u_ij);
 			v.Set(i, 0, 0);
 			rho.Set(i, 0, rho_ij);
 			P.Set(i, 0, p_ij);
-			T.Set(i, 0, p_ij / params.R / rho_ij);
-			e.Set(i, 0, T.Get(i, 0) * params.cv);
+			T.Set(i, 0, T_ij);
+			e.Set(i, 0, T_ij * params.cv);
 
 			outside_.Set(i, 0, BOUNDARY);
 		}

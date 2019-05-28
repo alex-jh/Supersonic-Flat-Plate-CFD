@@ -4,6 +4,6 @@
 #include <algorithm>
 
 double ViscositySutherlandLaw(const FlowParameters& params, double T) {
-    return params.mu*pow(std::max(0.0, T / params.T_0), 1.5)*
+    return params.mu*T / params.T_0*sqrt(T / params.T_0)*
 		(params.T_0 + 110) / (T + 110);
 }

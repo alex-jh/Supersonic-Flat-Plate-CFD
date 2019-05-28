@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.572
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SupersonicFlatPlate", "SupersonicFlatPlate.vcxproj", "{6F4E2F80-F220-4251-9AAE-62BE25107CD3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SupersonicFlowGpu", "..\SupersonicFlowGpu\SupersonicFlowGpu.vcxproj", "{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Debug|x64.ActiveCfg = Debug|x64
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Debug|x64.Build.0 = Debug|x64
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Debug|x86.ActiveCfg = Debug|Win32
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Debug|x86.Build.0 = Debug|Win32
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Release|x64.ActiveCfg = Release|x64
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Release|x64.Build.0 = Release|x64
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Release|x86.ActiveCfg = Release|Win32
+		{6F4E2F80-F220-4251-9AAE-62BE25107CD3}.Release|x86.Build.0 = Release|Win32
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Debug|x64.ActiveCfg = Debug|x64
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Debug|x64.Build.0 = Debug|x64
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Debug|x86.ActiveCfg = Debug|x64
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Release|x64.ActiveCfg = Release|x64
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Release|x64.Build.0 = Release|x64
+		{E7A4ADB8-20B0-4CCF-BD81-0195B566A2A0}.Release|x86.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {25DDCCCA-E2B3-4610-98A5-3372EF5B3110}
+	EndGlobalSection
+EndGlobal

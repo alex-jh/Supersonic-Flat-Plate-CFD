@@ -81,4 +81,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="flow_utils.cu" />
+  </ItemGroup>
 </Project>

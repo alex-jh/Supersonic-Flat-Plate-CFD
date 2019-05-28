@@ -12,7 +12,7 @@ static bool WriteInFile(const Array2D<double>& data, double deltax, double delta
 	file << data.XSize() << " " << data.YSize() << std::endl;
 	for (int i = 0; i < data.XSize(); i++) {
 		for (int j = 0; j < data.YSize(); j++) {
-			file << std::setprecision(8) << i * deltax << " " << j * deltay << " " << data.Get(i, j) << std::endl;
+			file << std::setprecision(16) << i * deltax << " " << j * deltay << " " << data.Get(i, j) << std::endl;
 		}
 	}
 	file.close();
